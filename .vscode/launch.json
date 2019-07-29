@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [{
+        "name": "json_ast error tests",
+        "type": "dart",
+        "request": "launch",
+        "program": "${workspaceFolder}/test/error_test.dart"
+    }, {
+        "name": "json_ast types tests",
+        "type": "dart",
+        "request": "launch",
+        "program": "${workspaceFolder}/test/types_test.dart"
+    }, {
+        "name": "json_ast json tests",
+        "type": "dart",
+        "request": "launch",
+        "program": "${workspaceFolder}/test/json_ast_test.dart"
+    }]
+}
