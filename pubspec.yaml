@@ -6,7 +6,7 @@ homepage: https://github.com/javiercbk/json_ast
 environment:
   sdk: ">=2.0.0 <3.0.0"
 dependencies:
-  grapheme_splitter: "1.0.0"
+  grapheme_splitter: "^1.0.0"
 
 dev_dependencies:
   test: "^1.3.0"
