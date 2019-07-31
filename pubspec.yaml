@@ -1,5 +1,5 @@
 name: json_ast
-version: 1.0.3
+version: 1.0.4
 author: Javier Lecuona <javierlecuona@gmail.com>
 description: A library that builds the abstract syntax tree for a JSON string.
 homepage: https://github.com/javiercbk/json_ast

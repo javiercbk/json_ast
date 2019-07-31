@@ -13,7 +13,7 @@ ValueNode createIdentifier(String value, String raw, [Location location]) {
   return node;
 }
 
-PropertyNode createProperty(ValueNode key, dynamic value, [Location location]) {
+PropertyNode createProperty(ValueNode key, Node value, [Location location]) {
   final node = new PropertyNode();
   node.key = key;
   node.value = value;

@@ -135,7 +135,7 @@ class PropertyNode extends Node {
   final List<Node> children = new List<Node>();
   int index;
   ValueNode key;
-  dynamic value;
+  Node value;
 
   PropertyNode() : super('Property');
 
