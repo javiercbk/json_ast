@@ -23,7 +23,7 @@ PropertyNode createProperty(ValueNode key, dynamic value, [Location location]) {
   return node;
 }
 
-ObjectNode createObject(List<Node> properties, [Location location]) {
+ObjectNode createObject(List<PropertyNode> properties, [Location location]) {
   final node = new ObjectNode();
   node.children.addAll(properties);
   if (location != null) {

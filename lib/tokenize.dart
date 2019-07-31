@@ -108,7 +108,7 @@ class Token {
 }
 
 class ObjectNode extends Node {
-  final List<dynamic> children = new List<dynamic>();
+  final List<PropertyNode> children = new List<PropertyNode>();
 
   ObjectNode() : super('Object');
 
