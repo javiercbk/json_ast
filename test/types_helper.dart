@@ -32,7 +32,7 @@ ObjectNode createObject(List<PropertyNode> properties, [Location location]) {
   return node;
 }
 
-ArrayNode createArray(List items, [Location location]) {
+ArrayNode createArray(List<Node> items, [Location location]) {
   final node = new ArrayNode();
   node.children.addAll(items);
   if (location != null) {

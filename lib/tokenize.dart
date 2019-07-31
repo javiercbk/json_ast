@@ -119,8 +119,8 @@ class ObjectNode extends Node {
       _compareDynamicList(this.children, other.children);
 }
 
-class ArrayNode<T> extends Node {
-  final List<T> children = new List<T>();
+class ArrayNode extends Node {
+  final List<Node> children = new List<Node>();
 
   ArrayNode() : super('Array');
 
