@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import "package:path/path.dart" show dirname, join, normalize;
 
 import '../../types_helper.dart';
 import '../../test_helper.dart';
@@ -38,11 +37,10 @@ final ast = TestAST(
     Settings());
 
 void main() {
-  final currentDirectory = dirname(testScriptPath());
   group("symbols", () {
     test("should parse symbols correctly", () {
-      final jsonFilePath = normalize(join(currentDirectory, 'symbols.json'));
-      final rawJSON = new File(jsonFilePath).readAsStringSync();
+      final rawJSON =
+          new File("test/fixtures/valid/symbols.json").readAsStringSync();
       final parsedAST = parse(rawJSON, Settings());
       assertNode(ast.ast, parsedAST, assertLocation: false, assertIndex: false);
     });

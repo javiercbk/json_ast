@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import "package:path/path.dart" show dirname, join, normalize;
 
 import '../../types_helper.dart';
-import '../../test_helper.dart';
 import '../../../lib/location.dart';
 import '../../../lib/error.dart';
 import '../../../lib/parse.dart';
@@ -27,12 +25,10 @@ final ast = new TestAST(
     new Settings());
 
 void main() {
-  final currentDirectory = dirname(testScriptPath());
   group("array in arrays", () {
     test("should parse array in arrays correctly", () {
-      final jsonFilePath =
-          normalize(join(currentDirectory, 'array_in_arrays.json'));
-      final rawJSON = new File(jsonFilePath).readAsStringSync();
+      final rawJSON = new File("test/fixtures/valid/array_in_arrays.json")
+          .readAsStringSync();
       final parsedAST = parse(rawJSON, Settings());
       expect(ast.ast, equals(parsedAST));
     });

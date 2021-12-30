@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import "package:path/path.dart" show dirname, join, normalize;
 
 import '../../types_helper.dart';
 import '../../test_helper.dart';
@@ -45,11 +44,10 @@ final ast = new TestAST(
     new Settings());
 
 void main() {
-  final currentDirectory = dirname(testScriptPath());
   group("literals", () {
     test("should parse literals correctly", () {
-      final jsonFilePath = normalize(join(currentDirectory, 'literals.json'));
-      final rawJSON = new File(jsonFilePath).readAsStringSync();
+      final rawJSON =
+          new File("test/fixtures/valid/literals.json").readAsStringSync();
       final parsedAST = parse(rawJSON, Settings());
       assertNode(ast.ast, parsedAST, assertLocation: false, assertIndex: false);
     });

@@ -1,15 +1,12 @@
 import 'dart:io';
-import "package:path/path.dart"
-    show dirname, join, normalize, extension, basename;
+import "package:path/path.dart" show extension, basename;
 import 'package:test/test.dart';
 
-import './test_helper.dart';
 import '../lib/json_ast.dart';
 
-void getFixtures(String currentDirectory, String dirname,
-    void Function(String, String, String) func) async {
-  final folderPath = normalize(join(currentDirectory, dirname));
-  final dir = new Directory(folderPath);
+void getFixtures(
+    String dirname, void Function(String, String, String) func) async {
+  final dir = new Directory("test/" + dirname);
   final entities = dir.listSync();
   final jsonFiles = entities.where((entity) =>
       extension(entity.path) == '.json' &&
@@ -17,7 +14,8 @@ void getFixtures(String currentDirectory, String dirname,
   jsonFiles.forEach((jsonFile) {
     final jsonFilePath = jsonFile.path;
     final fixtureName = basename(jsonFilePath);
-    String jsonRawData;
+
+    String? jsonRawData;
     try {
       jsonRawData = new File(jsonFilePath).readAsStringSync();
     } catch (e) {
@@ -31,10 +29,9 @@ void getFixtures(String currentDirectory, String dirname,
 }
 
 void main() {
-  final currentDirectory = dirname(testScriptPath());
   group("Right test fixtures", () {
     test('should parse valid json structures', () {
-      getFixtures(currentDirectory, 'fixtures/valid',
+      getFixtures('fixtures/valid',
           (String filePath, String fixtureName, String rawJSON) {
         final ast = parse(rawJSON, Settings(source: fixtureName));
         expect(ast, isNotNull,
@@ -45,12 +42,12 @@ void main() {
 
   group("Wrong test fixtures", () {
     test('should throw error on invalid json structures', () {
-      getFixtures(currentDirectory, 'fixtures/invalid',
+      getFixtures('fixtures/invalid',
           (String filePath, String fixtureName, String rawJSON) {
         final filePathLen = filePath.length;
         final textFile =
             new File('${filePath.substring(0, filePathLen - 4)}txt');
-        String errorStr;
+        String? errorStr;
         if (textFile.existsSync()) {
           errorStr = textFile.readAsStringSync();
         }
@@ -58,7 +55,7 @@ void main() {
           final ast = parse(rawJSON, Settings());
           expect(ast, isNull,
               reason: 'file "$fixtureName" failed to be parsed');
-        } catch (e) {
+        } on JSONASTException catch (e) {
           expect(e, isNotNull,
               reason: 'file "$fixtureName" failed to be parsed');
           if (errorStr != null) {

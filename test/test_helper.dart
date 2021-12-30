@@ -1,18 +1,6 @@
-import 'dart:io';
 import 'package:test/test.dart';
 
 import '../lib/tokenize.dart';
-
-String testScriptPath() {
-  var script = Platform.script.toString();
-  if (script.startsWith("file://")) {
-    script = script.substring(7);
-  } else {
-    final idx = script.indexOf("file:/");
-    script = script.substring(idx + 5);
-  }
-  return script;
-}
 
 _assertSameNodeType(Node node, Node other) {
   expect(node.runtimeType, equals(other.runtimeType));
@@ -21,22 +9,22 @@ _assertSameNodeType(Node node, Node other) {
 
 assertNode(Node node, Node other, {assertLocation: true, assertIndex: true}) {
   _assertSameNodeType(node, other);
-  if (node is ValueNode) {
+  if (node is ValueNode && other is ValueNode) {
     _assertValueNode(node, other, assertLocation: assertLocation);
   }
-  if (node is ObjectNode) {
+  if (node is ObjectNode && other is ObjectNode) {
     _assertObjectNode(node, other,
         assertLocation: assertLocation, assertIndex: assertIndex);
   }
-  if (node is ArrayNode) {
+  if (node is ArrayNode && other is ArrayNode) {
     _assertArrayNode(node, other,
         assertLocation: assertLocation, assertIndex: assertIndex);
   }
-  if (node is PropertyNode) {
+  if (node is PropertyNode && other is PropertyNode) {
     _assertPropertyNode(node, other,
         assertLocation: assertLocation, assertIndex: assertIndex);
   }
-  if (node is LiteralNode) {
+  if (node is LiteralNode && other is LiteralNode) {
     _assertLiteralNode(node, other, assertLocation: assertLocation);
   }
 }
@@ -97,7 +85,8 @@ _assertValueNode(ValueNode node, ValueNode other, {assertLocation: true}) {
 
 _assertPropertyNode(PropertyNode node, PropertyNode other,
     {assertLocation: true, assertIndex: true}) {
-  _assertValueNode(node.key, other.key, assertLocation: assertLocation);
+  _assertValueNode(node.key as ValueNode, other.key as ValueNode,
+      assertLocation: assertLocation);
   _assertMaybeNode(node.value, other.value,
       assertLocation: assertLocation, assertIndex: assertIndex);
   if (assertIndex) {

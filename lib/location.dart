@@ -2,7 +2,7 @@ class Loc {
   final int line;
   final int column;
 
-  Loc({this.line, this.column});
+  Loc({required this.line, required this.column});
 }
 
 class Segment extends Loc {
@@ -23,7 +23,7 @@ class Location {
   final Segment end;
   final String source;
 
-  Location(this.start, this.end, [this.source]);
+  Location(this.start, this.end, [this.source = ""]);
 
   bool operator ==(dynamic other) =>
       other is Location &&
@@ -33,7 +33,7 @@ class Location {
 
   static Location create(int startLine, int startColumn, int startOffset,
       int endLine, int endColumn, int endOffset,
-      [String source]) {
+      [String source = ""]) {
     final startSegment = new Segment(startLine, startColumn, startOffset);
     final endSegment = new Segment(endLine, endColumn, endOffset);
     return new Location(startSegment, endSegment, source);

@@ -78,14 +78,14 @@ bool _compareDynamicList(List l, List other) {
 
 abstract class Node {
   final String type;
-  Location loc;
+  Location? loc;
 
   Node(this.type);
 }
 
 class ValueNode extends Node {
   final String value;
-  final String raw;
+  final String? raw;
 
   ValueNode(this.value, this.raw) : super('Identifier');
 
@@ -98,17 +98,17 @@ class ValueNode extends Node {
 }
 
 class Token {
-  final TokenType type;
+  final TokenType? type;
   final int line;
   final int column;
   final int index;
-  final String value;
-  Location loc;
+  final String? value;
+  Location? loc;
   Token(this.type, this.line, this.column, this.index, this.value);
 }
 
 class ObjectNode extends Node {
-  final List<PropertyNode> children = new List<PropertyNode>();
+  final List<PropertyNode> children = <PropertyNode>[];
 
   ObjectNode() : super('Object');
 
@@ -120,7 +120,7 @@ class ObjectNode extends Node {
 }
 
 class ArrayNode extends Node {
-  final List<Node> children = new List<Node>();
+  final List<Node> children = <Node>[];
 
   ArrayNode() : super('Array');
 
@@ -132,10 +132,10 @@ class ArrayNode extends Node {
 }
 
 class PropertyNode extends Node {
-  final List<Node> children = new List<Node>();
-  int index;
-  ValueNode key;
-  Node value;
+  final List<Node> children = <Node>[];
+  int? index;
+  ValueNode? key;
+  Node? value;
 
   PropertyNode() : super('Property');
 
@@ -151,7 +151,7 @@ class PropertyNode extends Node {
 
 class LiteralNode extends Node {
   final dynamic value;
-  final String raw;
+  final String? raw;
 
   LiteralNode(this.value, this.raw) : super('Literal');
 
@@ -206,7 +206,7 @@ class Position {
 
 // PARSERS
 
-Position parseWhitespace(String input, int index, int line, int column) {
+Position? parseWhitespace(String input, int index, int line, int column) {
   final char = input[index];
 
   if (char == '\r') {
@@ -233,7 +233,7 @@ Position parseWhitespace(String input, int index, int line, int column) {
   return new Position(index, line, column);
 }
 
-Token parseChar(String input, int index, int line, int column) {
+Token? parseChar(String input, int index, int line, int column) {
   final char = input[index];
   if (punctuatorTokensMap.containsKey(char)) {
     final tokenType = punctuatorTokensMap[char];
@@ -243,7 +243,7 @@ Token parseChar(String input, int index, int line, int column) {
   return null;
 }
 
-Token parseKeyword(String input, int index, int line, int column) {
+Token? parseKeyword(String input, int index, int line, int column) {
   final entries = keywordTokensMap.entries;
   for (int i = 0; i < entries.length; i++) {
     final entry = entries.elementAt(i);
@@ -259,7 +259,7 @@ Token parseKeyword(String input, int index, int line, int column) {
   return null;
 }
 
-Token parseString(String input, int index, int line, int column) {
+Token? parseString(String input, int index, int line, int column) {
   final startIndex = index;
   // final buffer = new StringBuffer();
   _StringState state = _StringState._START_;
@@ -327,7 +327,7 @@ Token parseString(String input, int index, int line, int column) {
   return null;
 }
 
-Token parseNumber(String input, int index, int line, int column) {
+Token? parseNumber(String input, int index, int line, int column) {
   final startIndex = index;
   int passedValueIndex = index;
   _NumberState state = _NumberState._START_;
@@ -455,7 +455,7 @@ Token parseNumber(String input, int index, int line, int column) {
   return null;
 }
 
-typedef Token _tokenParser(String input, int index, int line, int column);
+typedef Token? _tokenParser(String input, int index, int line, int column);
 
 List<_tokenParser> _parsers = [
   parseChar,
@@ -464,7 +464,7 @@ List<_tokenParser> _parsers = [
   parseNumber
 ];
 
-Token _parseToken(String input, int index, int line, int column) {
+Token? _parseToken(String input, int index, int line, int column) {
   for (int i = 0; i < _parsers.length; i++) {
     final token = _parsers[i](input, index, line, column);
     if (token != null) {
@@ -478,7 +478,7 @@ List<Token> tokenize(String input, Settings settings) {
   int line = 1;
   int column = 1;
   int index = 0;
-  List<Token> tokens = new List<Token>();
+  List<Token> tokens = <Token>[];
 
   while (index < input.length) {
     final whitespace = parseWhitespace(input, index, line, column);
@@ -492,16 +492,18 @@ List<Token> tokenize(String input, Settings settings) {
     final token = _parseToken(input, index, line, column);
 
     if (token != null) {
-      token.loc = Location.create(line, column, index, token.line, token.column,
-          token.index, settings.source);
+      final src = settings.source ?? "";
+      token.loc = Location.create(
+          line, column, index, token.line, token.column, token.index, src);
       tokens.add(token);
       index = token.index;
       line = token.line;
       column = token.column;
     } else {
+      final src = settings.source ?? "";
       final msg = unexpectedSymbol(
-          substring(input, index, index + 1), settings.source, line, column);
-      throw new JSONASTException(msg, input, settings.source, line, column);
+          substring(input, index, index + 1), src, line, column);
+      throw new JSONASTException(msg, input, src, line, column);
     }
   }
   return tokens;

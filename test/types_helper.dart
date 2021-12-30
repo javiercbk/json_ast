@@ -2,7 +2,7 @@ import '../lib/location.dart';
 import '../lib/tokenize.dart';
 import '../lib/error.dart';
 
-ValueNode createIdentifier(String value, String raw, [Location location]) {
+ValueNode createIdentifier(String value, String raw, [Location? location]) {
   if (raw == null) {
     raw = value;
   }
@@ -13,7 +13,7 @@ ValueNode createIdentifier(String value, String raw, [Location location]) {
   return node;
 }
 
-PropertyNode createProperty(ValueNode key, Node value, [Location location]) {
+PropertyNode createProperty(ValueNode key, Node value, [Location? location]) {
   final node = new PropertyNode();
   node.key = key;
   node.value = value;
@@ -23,7 +23,7 @@ PropertyNode createProperty(ValueNode key, Node value, [Location location]) {
   return node;
 }
 
-ObjectNode createObject(List<PropertyNode> properties, [Location location]) {
+ObjectNode createObject(List<PropertyNode> properties, [Location? location]) {
   final node = new ObjectNode();
   node.children.addAll(properties);
   if (location != null) {
@@ -32,7 +32,7 @@ ObjectNode createObject(List<PropertyNode> properties, [Location location]) {
   return node;
 }
 
-ArrayNode createArray(List<Node> items, [Location location]) {
+ArrayNode createArray(List<Node> items, [Location? location]) {
   final node = new ArrayNode();
   node.children.addAll(items);
   if (location != null) {
@@ -41,7 +41,7 @@ ArrayNode createArray(List<Node> items, [Location location]) {
   return node;
 }
 
-LiteralNode createLiteral(dynamic value, String raw, [Location location]) {
+LiteralNode createLiteral(dynamic value, String raw, [Location? location]) {
   final node = new LiteralNode(value, raw);
   if (location != null) {
     node.loc = location;

@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import "package:path/path.dart" show dirname, join, normalize;
 
 import '../../types_helper.dart';
 import '../../test_helper.dart';
@@ -31,11 +30,10 @@ final _a = object([prop(id('a', '"a"'), _b)]);
 final ast = new TestAST(_a, new Settings());
 
 void main() {
-  final currentDirectory = dirname(testScriptPath());
   group("deep json", () {
     test("should parse a deep json correctly", () {
-      final jsonFilePath = normalize(join(currentDirectory, 'deep.json'));
-      final rawJSON = new File(jsonFilePath).readAsStringSync();
+      final rawJSON =
+          new File("test/fixtures/valid/deep.json").readAsStringSync();
       final parsedAST = parse(rawJSON, Settings());
       assertNode(ast.ast, parsedAST, assertLocation: false, assertIndex: false);
     });

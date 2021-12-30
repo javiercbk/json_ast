@@ -47,7 +47,7 @@ String printLines(List<String> lines, int start, int end, int maxNumLength,
 }
 
 String codeErrorFragment(String input, int linePos, int columnPos,
-    [Settings settings]) {
+    [Settings? settings]) {
   final splitter = new RegExp(r"\r\n?|\n|\f");
   final lines = input.split(splitter);
   settings = settings != null ? settings : new Settings();
@@ -72,24 +72,24 @@ String codeErrorFragment(String input, int linePos, int columnPos,
 
 class JSONASTException implements Exception {
   final String rawMessage;
-  final String input;
+  final String? input;
   final String source;
   final int line;
   final int column;
-  String _message;
+  String? _message;
 
   JSONASTException(
       this.rawMessage, this.input, this.source, this.line, this.column) {
     if (input != null) {
       this._message = line != 0
-          ? this.rawMessage + '\n' + codeErrorFragment(input, line, column)
+          ? this.rawMessage + '\n' + codeErrorFragment(input!, line, column)
           : this.rawMessage;
     } else {
       this._message = rawMessage;
     }
   }
 
-  String get message {
+  String? get message {
     return this._message;
   }
 }

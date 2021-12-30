@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import "package:path/path.dart" show dirname, join, normalize;
 
 import '../../types_helper.dart';
 import '../../test_helper.dart';
@@ -206,11 +205,10 @@ final ast = TestAST(
     new Settings());
 
 void main() {
-  final currentDirectory = dirname(testScriptPath());
   group("big json", () {
     test("should parse a big json correctly", () {
-      final jsonFilePath = normalize(join(currentDirectory, 'big.json'));
-      final rawJSON = new File(jsonFilePath).readAsStringSync();
+      final rawJSON =
+          new File("test/fixtures/valid/big.json").readAsStringSync();
       final parsedAST = parse(rawJSON, Settings());
       assertNode(ast.ast, parsedAST, assertLocation: false, assertIndex: false);
     });

@@ -18,8 +18,9 @@ JSONASTException errorEof(
       ? tokenList[tokenList.length - 1].loc.end
       : new Loc(line: 1, column: 1);
 
+  final src = settings.source ?? "";
   return new JSONASTException(
-      unexpectedEnd(), input, settings.source, loc.line, loc.column);
+      unexpectedEnd(), input, src, loc.line, loc.column);
 }
 
 /// [hexCode] is the hexCode string without '\u' prefix
@@ -27,7 +28,10 @@ String parseHexEscape(String hexCode) {
   int charCode = 0;
   final minLength = min(hexCode.length, 4);
   for (int i = 0; i < minLength; i++) {
-    charCode = charCode * 16 + int.tryParse(hexCode[i], radix: 16);
+    final hc = int.tryParse(hexCode[i], radix: 16);
+    if (hc != null) {
+      charCode = charCode * 16 + hc;
+    }
   }
   return String.fromCharCode(charCode);
 }
@@ -66,10 +70,10 @@ String parseString(String string) {
   return result.toString();
 }
 
-ValueIndex<ObjectNode> parseObject(
+ValueIndex<ObjectNode>? parseObject(
     input, List<Token> tokenList, int index, Settings settings) {
   // object: LEFT_BRACE (property (COMMA property)*)? RIGHT_BRACE
-  Token startToken;
+  late Token startToken;
   final object = new ObjectNode();
   _ObjectState state = _ObjectState._START_;
 
@@ -92,22 +96,35 @@ ValueIndex<ObjectNode> parseObject(
       case _ObjectState.OPEN_OBJECT:
         {
           if (token.type == TokenType.RIGHT_BRACE) {
-            if (settings.loc != null) {
+            if (settings.loc) {
+              final src = settings.source ?? "";
               object.loc = Location.create(
-                  startToken.loc.start.line,
-                  startToken.loc.start.column,
-                  startToken.loc.start.offset,
-                  token.loc.end.line,
-                  token.loc.end.column,
-                  token.loc.end.offset,
-                  settings.source);
+                  startToken.loc!.start.line,
+                  startToken.loc!.start.column,
+                  startToken.loc!.start.offset,
+                  token.loc!.end.line,
+                  token.loc!.end.column,
+                  token.loc!.end.offset,
+                  src);
             }
             return new ValueIndex(object, index + 1);
           } else {
             final property = parseProperty(input, tokenList, index, settings);
-            object.children.add(property.value);
-            state = _ObjectState.PROPERTY;
-            index = property.index;
+            if (property != null) {
+              object.children.add(property.value);
+              state = _ObjectState.PROPERTY;
+              index = property.index;
+            } else {
+              final src = settings.source ?? "";
+              final msg = unexpectedToken(
+                  substring(
+                      input, token.loc!.start.offset, token.loc!.end.offset),
+                  src,
+                  token.loc!.start.line,
+                  token.loc!.start.column);
+              throw new JSONASTException(msg, input, src, token.loc!.start.line,
+                  token.loc!.start.column);
+            }
           }
           break;
         }
@@ -115,28 +132,31 @@ ValueIndex<ObjectNode> parseObject(
       case _ObjectState.PROPERTY:
         {
           if (token.type == TokenType.RIGHT_BRACE) {
-            if (settings.loc) {
+            if (settings.loc != null) {
+              final src = settings.source ?? "";
               object.loc = Location.create(
-                  startToken.loc.start.line,
-                  startToken.loc.start.column,
-                  startToken.loc.start.offset,
-                  token.loc.end.line,
-                  token.loc.end.column,
-                  token.loc.end.offset,
-                  settings.source);
+                  startToken.loc!.start.line,
+                  startToken.loc!.start.column,
+                  startToken.loc!.start.offset,
+                  token.loc!.end.line,
+                  token.loc!.end.column,
+                  token.loc!.end.offset,
+                  src);
             }
             return new ValueIndex(object, index + 1);
           } else if (token.type == TokenType.COMMA) {
             state = _ObjectState.COMMA;
             index++;
           } else {
+            final src = settings.source ?? "";
             final msg = unexpectedToken(
-                substring(input, token.loc.start.offset, token.loc.end.offset),
-                settings.source,
-                token.loc.start.line,
-                token.loc.start.column);
-            throw new JSONASTException(msg, input, settings.source,
-                token.loc.start.line, token.loc.start.column);
+                substring(
+                    input, token.loc!.start.offset, token.loc!.end.offset),
+                src,
+                token.loc!.start.line,
+                token.loc!.start.column);
+            throw new JSONASTException(msg, input, src, token.loc!.start.line,
+                token.loc!.start.column);
           }
           break;
         }
@@ -149,13 +169,15 @@ ValueIndex<ObjectNode> parseObject(
             object.children.add(property.value);
             state = _ObjectState.PROPERTY;
           } else {
+            final src = settings.source ?? "";
             final msg = unexpectedToken(
-                substring(input, token.loc.start.offset, token.loc.end.offset),
-                settings.source,
-                token.loc.start.line,
-                token.loc.start.column);
-            throw new JSONASTException(msg, input, settings.source,
-                token.loc.start.line, token.loc.start.column);
+                substring(
+                    input, token.loc!.start.offset, token.loc!.end.offset),
+                src,
+                token.loc!.start.line,
+                token.loc!.start.column);
+            throw new JSONASTException(msg, input, src, token.loc!.start.line,
+                token.loc!.start.column);
           }
           break;
         }
@@ -164,10 +186,10 @@ ValueIndex<ObjectNode> parseObject(
   throw errorEof(input, tokenList, settings);
 }
 
-ValueIndex<PropertyNode> parseProperty(
+ValueIndex<PropertyNode>? parseProperty(
     String input, List<Token> tokenList, int index, Settings settings) {
   // property: STRING COLON value
-  Token startToken;
+  late Token startToken;
   final property = new PropertyNode();
   _PropertyState state = _PropertyState._START_;
 
@@ -179,9 +201,9 @@ ValueIndex<PropertyNode> parseProperty(
         {
           if (token.type == TokenType.STRING) {
             final value = parseString(safeSubstring(
-                input, token.loc.start.offset + 1, token.loc.end.offset - 1));
+                input, token.loc!.start.offset + 1, token.loc!.end.offset - 1));
             final key = new ValueNode(value, token.value);
-            if (settings.loc) {
+            if (settings.loc != null) {
               key.loc = token.loc;
             }
             startToken = token;
@@ -200,13 +222,15 @@ ValueIndex<PropertyNode> parseProperty(
             state = _PropertyState.COLON;
             index++;
           } else {
+            final src = settings.source ?? "";
             final msg = unexpectedToken(
-                substring(input, token.loc.start.offset, token.loc.end.offset),
-                settings.source,
-                token.loc.start.line,
-                token.loc.start.column);
-            throw new JSONASTException(msg, input, settings.source,
-                token.loc.start.line, token.loc.start.column);
+                substring(
+                    input, token.loc!.start.offset, token.loc!.end.offset),
+                src,
+                token.loc!.start.line,
+                token.loc!.start.column);
+            throw new JSONASTException(msg, input, src, token.loc!.start.line,
+                token.loc!.start.column);
           }
           break;
         }
@@ -215,15 +239,16 @@ ValueIndex<PropertyNode> parseProperty(
         {
           final value = _parseValue(input, tokenList, index, settings);
           property.value = value.value;
-          if (settings.loc) {
+          if (settings.loc != null) {
+            final src = settings.source ?? "";
             property.loc = Location.create(
-                startToken.loc.start.line,
-                startToken.loc.start.column,
-                startToken.loc.start.offset,
+                startToken.loc!.start.line,
+                startToken.loc!.start.column,
+                startToken.loc!.start.offset,
                 value.value.loc.end.line,
                 value.value.loc.end.column,
                 value.value.loc.end.offset,
-                settings.source);
+                src);
           }
           return new ValueIndex(property, value.index);
         }
@@ -232,10 +257,10 @@ ValueIndex<PropertyNode> parseProperty(
   return null;
 }
 
-ValueIndex<ArrayNode> parseArray(
+ValueIndex<ArrayNode>? parseArray(
     String input, List<Token> tokenList, int index, Settings settings) {
   // array: LEFT_BRACKET (value (COMMA value)*)? RIGHT_BRACKET
-  Token startToken;
+  late Token startToken;
   final array = new ArrayNode();
   var state = _ArrayState._START_;
   Token token;
@@ -257,15 +282,16 @@ ValueIndex<ArrayNode> parseArray(
       case _ArrayState.OPEN_ARRAY:
         {
           if (token.type == TokenType.RIGHT_BRACKET) {
-            if (settings.loc) {
+            if (settings.loc != null) {
+              final src = settings.source ?? "";
               array.loc = Location.create(
-                  startToken.loc.start.line,
-                  startToken.loc.start.column,
-                  startToken.loc.start.offset,
-                  token.loc.end.line,
-                  token.loc.end.column,
-                  token.loc.end.offset,
-                  settings.source);
+                  startToken.loc!.start.line,
+                  startToken.loc!.start.column,
+                  startToken.loc!.start.offset,
+                  token.loc!.end.line,
+                  token.loc!.end.column,
+                  token.loc!.end.offset,
+                  src);
             }
             return new ValueIndex(array, index + 1);
           } else {
@@ -280,28 +306,31 @@ ValueIndex<ArrayNode> parseArray(
       case _ArrayState.VALUE:
         {
           if (token.type == TokenType.RIGHT_BRACKET) {
-            if (settings.loc) {
+            if (settings.loc != null) {
+              final src = settings.source ?? "";
               array.loc = Location.create(
-                  startToken.loc.start.line,
-                  startToken.loc.start.column,
-                  startToken.loc.start.offset,
-                  token.loc.end.line,
-                  token.loc.end.column,
-                  token.loc.end.offset,
-                  settings.source);
+                  startToken.loc!.start.line,
+                  startToken.loc!.start.column,
+                  startToken.loc!.start.offset,
+                  token.loc!.end.line,
+                  token.loc!.end.column,
+                  token.loc!.end.offset,
+                  src);
             }
             return new ValueIndex(array, index + 1);
           } else if (token.type == TokenType.COMMA) {
             state = _ArrayState.COMMA;
             index++;
           } else {
+            final src = settings.source ?? "";
             final msg = unexpectedToken(
-                substring(input, token.loc.start.offset, token.loc.end.offset),
-                settings.source,
-                token.loc.start.line,
-                token.loc.start.column);
-            throw new JSONASTException(msg, input, settings.source,
-                token.loc.start.line, token.loc.start.column);
+                substring(
+                    input, token.loc!.start.offset, token.loc!.end.offset),
+                src,
+                token.loc!.start.line,
+                token.loc!.start.column);
+            throw new JSONASTException(msg, input, src, token.loc!.start.line,
+                token.loc!.start.column);
           }
           break;
         }
@@ -319,7 +348,7 @@ ValueIndex<ArrayNode> parseArray(
   throw errorEof(input, tokenList, settings);
 }
 
-ValueIndex<LiteralNode> parseLiteral(
+ValueIndex<LiteralNode>? parseLiteral(
     String input, List<Token> tokenList, int index, Settings settings) {
   // literal: STRING | NUMBER | TRUE | FALSE | NULL
   final token = tokenList[index];
@@ -329,14 +358,16 @@ ValueIndex<LiteralNode> parseLiteral(
     case TokenType.STRING:
       {
         value = parseString(safeSubstring(
-            input, token.loc.start.offset + 1, token.loc.end.offset - 1));
+            input, token.loc!.start.offset + 1, token.loc!.end.offset - 1));
         break;
       }
     case TokenType.NUMBER:
       {
-        value = int.tryParse(token.value) ?? null;
-        if (value == null) {
-          value = double.tryParse(token.value) ?? null;
+        if (token.value != null) {
+          value = int.tryParse(token.value!) ?? null;
+          if (value == null) {
+            value = double.tryParse(token.value!) ?? null;
+          }
         }
         break;
       }
@@ -362,18 +393,18 @@ ValueIndex<LiteralNode> parseLiteral(
   }
 
   final literal = new LiteralNode(value, token.value);
-  if (settings.loc) {
+  if (settings.loc != null) {
     literal.loc = token.loc;
   }
   return new ValueIndex(literal, index + 1);
 }
 
-typedef ValueIndex _parserFun(
+typedef ValueIndex? _parserFun(
     String input, List<Token> tokenList, int index, Settings settings);
 
 List<_parserFun> _parsersList = [parseLiteral, parseObject, parseArray];
 
-ValueIndex _findValueIndex(
+ValueIndex? _findValueIndex(
     String input, List<Token> tokenList, int index, Settings settings) {
   for (int i = 0; i < _parsersList.length; i++) {
     final parser = _parsersList.elementAt(i);
@@ -395,13 +426,14 @@ ValueIndex _parseValue(
   if (value != null) {
     return value;
   } else {
+    final src = settings.source ?? "";
     final msg = unexpectedToken(
-        substring(input, token.loc.start.offset, token.loc.end.offset),
-        settings.source,
-        token.loc.start.line,
-        token.loc.start.column);
-    throw new JSONASTException(msg, input, settings.source,
-        token.loc.start.line, token.loc.start.column);
+        substring(input, token.loc!.start.offset, token.loc!.end.offset),
+        src,
+        token.loc!.start.line,
+        token.loc!.start.column);
+    throw new JSONASTException(
+        msg, input, src, token.loc!.start.line, token.loc!.start.column);
   }
 }
 
@@ -420,11 +452,12 @@ Node parse(input, settings) {
 
   final token = tokenList[value.index];
 
+  final src = settings.source ?? "";
   final msg = unexpectedToken(
-      substring(input, token.loc.start.offset, token.loc.end.offset),
-      settings.source,
-      token.loc.start.line,
-      token.loc.start.column);
-  throw new JSONASTException(msg, input, settings.source, token.loc.start.line,
-      token.loc.start.column);
+      substring(input, token.loc!.start.offset, token.loc!.end.offset),
+      src,
+      token.loc!.start.line,
+      token.loc!.start.column);
+  throw new JSONASTException(
+      msg, input, src, token.loc!.start.line, token.loc!.start.column);
 }
